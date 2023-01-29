@@ -114,7 +114,7 @@ if __name__ == "__main__":
         response = request.execute()
         old_len = len(user_list)
         for message in response["items"]:
-            pprint.pprint(message)
+            logger.debug(message)
             if (message.get("authorDetails")):
                 usr = message["authorDetails"]["displayName"]
                 if usr not in user_list:
