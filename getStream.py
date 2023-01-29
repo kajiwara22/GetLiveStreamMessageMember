@@ -7,17 +7,18 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import sys
 import time
-from logging import getLogger, FileHandler, DEBUG, Formatter, StreamHandler, WARNING
+from logging import getLogger, FileHandler, DEBUG, Formatter, StreamHandler, INFO
 import configparser
 
 logger = getLogger(__name__)
 log_file_path = f"log/{date.today().strftime('%Y-%m-%d')}.log"
 file_handler = FileHandler(filename=log_file_path)  # handler2はファイル出力
+logger.setLevel(DEBUG)
 file_handler.setLevel(DEBUG)  # handler2はLevel.WARN以上
 file_handler.setFormatter(Formatter("%(asctime)s %(levelname)8s %(message)s"))
 logger.addHandler(file_handler)
 stream_handler = StreamHandler(sys.stdout)
-stream_handler.setLevel(WARNING)
+stream_handler.setLevel(INFO)
 logger.addHandler(stream_handler)
 config = configparser.ConfigParser()
 config.read("youtubechannel.ini")
