@@ -126,7 +126,7 @@ if __name__ == "__main__":
             logger.debug("発言ユーザーは下記の通り ")
             logger.debug(f"{user_list}")
             with open(f"result/{date.today().strftime('%Y-%m-%d')}.txt",
-                      mode="w") as f:
+                      mode="w", encoding="UTF-8") as f:
                 for listener in user_list:
                     f.write(f"{listener}\n")
         time.sleep(slp_time)
