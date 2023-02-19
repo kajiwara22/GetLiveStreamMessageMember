@@ -90,7 +90,8 @@ if __name__ == "__main__":
             live_chat_details = details[0]["liveStreamingDetails"]
             logger.info("配信情報はこちら")
             logger.info(live_chat_details)
-            break
+            if "actualEndTime" not in live_chat_details.keys():
+                break
     if "activeLiveChatId" in live_chat_details.keys():
         chat_id = live_chat_details["activeLiveChatId"]
         logger.info("チャットIDがとれました。")
