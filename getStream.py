@@ -11,7 +11,7 @@ import configparser
 
 logger = getLogger(__name__)
 log_file_path = f"log/{date.today().strftime('%Y-%m-%d')}.log"
-file_handler = FileHandler(filename=log_file_path)  # handler2はファイル出力
+file_handler = FileHandler(filename=log_file_path, encoding='utf-8')  # handler2はファイル出力
 logger.setLevel(DEBUG)
 file_handler.setLevel(DEBUG)  # handler2はLevel.WARN以上
 file_handler.setFormatter(Formatter("%(asctime)s %(levelname)8s %(message)s"))
