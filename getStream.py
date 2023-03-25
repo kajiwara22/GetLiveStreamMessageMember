@@ -47,7 +47,9 @@ def get_authenticated_service():
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
+            logger.debug("tokenのリフレッシュが必要です。")
             creds.refresh(Request())
+            logger.debug("リフレッシュを実施しました。")
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
                 CLIENT_SECRETS_FILE, SCOPES)
