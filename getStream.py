@@ -77,7 +77,11 @@ def youtube_video_live_stream_details(video_id: str) -> list:
 
 
 if __name__ == "__main__":
-    youtube = get_authenticated_service()
+    try:
+        youtube = get_authenticated_service()
+    except:
+        logger.exception("トークンの更新または取得に失敗しました。処理を中断します。")
+        sys.exit(1)
     # youtube = youtube = build('youtube', 'v3', developerKey=API_KEY)
     live_chat_details = None
     chat_id = None
