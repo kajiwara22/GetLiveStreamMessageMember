@@ -83,7 +83,10 @@ if __name__ == "__main__":
     chat_id = None
     channel_id = config["SETTING"]["channel_id"]
     for item in youtube_search(channel_id):
-        video_id = item["id"]["videoId"]
+        video_id = item["id"].get("videoId")
+        if video_id is None:
+            logger.error("まだLive配信は開始してない模様です。処理を終了します。")
+            sys.exit()
         details = youtube_video_live_stream_details(video_id)
         if len(details) == 0:
             logger.error("まだLive配信は開始してない模様です。処理を終了します。")
