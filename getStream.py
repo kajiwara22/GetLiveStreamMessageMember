@@ -148,4 +148,10 @@ if __name__ == "__main__":
                 for listener in user_list:
                     f.write(f"{listener}\n")
         time.sleep(slp_time)
-    logger.info("配信が終わったようなので、処理を終了します。")
+    try:
+        logger.debug("次回の配信向けにトークンの更新処理を行います。")
+        get_authenticated_service()
+    except:
+        logger.exception("トークンの更新または取得に失敗しました。")
+    finally:
+        logger.info("配信が終わったようなので、処理を終了します。")
