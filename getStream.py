@@ -7,6 +7,7 @@ from google.auth.transport.requests import Request
 import sys
 import time
 from logging import getLogger, FileHandler, DEBUG, Formatter, StreamHandler, INFO
+from datetime import datetime, timedelta, timezone
 import configparser
 
 logger = getLogger(__name__)
@@ -35,6 +36,11 @@ API_VERSION = "v3"
 youtube = None
 slp_time = 10  # sec
 
+JST = timezone(timedelta(hours=+9), 'JST')
+
+def conv_jst(d:datetime):
+    if d.tzinfo is None or d.tzinfo.utcoffset is None:
+        return (d.replace(tzinfo=timezone.utc)).astimezone(JST)
 
 def get_authenticated_service():
     creds = None
@@ -47,9 +53,11 @@ def get_authenticated_service():
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            logger.debug("tokenのリフレッシュが必要です。")
+            old_expiry_time = creds.expiry
+            logger.debug(f"tokenのリフレッシュが必要です。 有効期限: {conv_jst(old_expiry_time)}")
             creds.refresh(Request())
             logger.debug("リフレッシュを実施しました。")
+            logger.debug(f"更新前 {conv_jst(old_expiry_time)} -> 更新後: {conv_jst(creds.expiry)}")
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
                 CLIENT_SECRETS_FILE, SCOPES)
