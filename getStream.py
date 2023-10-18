@@ -94,6 +94,9 @@ if __name__ == "__main__":
     live_chat_details = None
     chat_id = None
     channel_id = config["SETTING"]["channel_id"]
+    logger.info("配信対象日比較に用いる日付")
+    today_obj = datetime.today().astimezone(timezone.utc)   
+    logger.info(today_obj)
     for item in youtube_search(channel_id):
         video_id = item["id"].get("videoId")
         if video_id is None:
@@ -107,7 +110,12 @@ if __name__ == "__main__":
             live_chat_details = details[0]["liveStreamingDetails"]
             logger.info("配信情報はこちら")
             logger.info(live_chat_details)
-            if "actualEndTime" not in live_chat_details.keys():
+            # {'scheduledStartTime': '2023-10-20T12:30:46Z'
+            scheduledStartTime = datetime.strptime(live_chat_details["scheduledStartTime"], '%Y-%m-%dT%H:%M:%S%z')
+            logger.info("日付比較は以下のdayで実施")
+            logger.info(today_obj)
+            logger.info(scheduledStartTime)
+            if scheduledStartTime.day == today_obj.day and "actualEndTime" not in live_chat_details.keys():
                 break
     if "activeLiveChatId" in live_chat_details.keys():
         chat_id = live_chat_details["activeLiveChatId"]
