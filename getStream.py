@@ -38,9 +38,11 @@ slp_time = 10  # sec
 
 JST = timezone(timedelta(hours=+9), 'JST')
 
+
 def conv_jst(d:datetime):
     if d.tzinfo is None or d.tzinfo.utcoffset is None:
         return (d.replace(tzinfo=timezone.utc)).astimezone(JST)
+
 
 def get_authenticated_service():
     creds = None
@@ -107,16 +109,20 @@ if __name__ == "__main__":
             logger.error("まだLive配信は開始してない模様です。処理を終了します。")
             sys.exit()
         else:
-            live_chat_details = details[0]["liveStreamingDetails"]
-            logger.info("配信情報はこちら")
-            logger.info(live_chat_details)
-            # {'scheduledStartTime': '2023-10-20T12:30:46Z'
-            scheduledStartTime = datetime.strptime(live_chat_details["scheduledStartTime"], '%Y-%m-%dT%H:%M:%S%z')
-            logger.info("日付比較は以下のdayで実施")
-            logger.info(today_obj)
-            logger.info(scheduledStartTime)
-            if scheduledStartTime.day == today_obj.day and "actualEndTime" not in live_chat_details.keys():
-                break
+            live_chat_details = details[0].get("liveStreamingDetails")
+            if (live_chat_details):
+                logger.info("配信情報はこちら")
+                logger.info(live_chat_details)
+                # {'scheduledStartTime': '2023-10-20T12:30:46Z'
+                scheduledStartTime = datetime.strptime(live_chat_details["scheduledStartTime"], '%Y-%m-%dT%H:%M:%S%z')
+                logger.info("日付比較は以下のdayで実施")
+                logger.info(today_obj)
+                logger.info(scheduledStartTime)
+                if scheduledStartTime.day == today_obj.day and "actualEndTime" not in live_chat_details.keys():
+                    break
+            else:
+                logger.warn("liveStreamingDetailsが見つかりませんでした")
+                logger.warn(details[0])
     if "activeLiveChatId" in live_chat_details.keys():
         chat_id = live_chat_details["activeLiveChatId"]
         logger.info("チャットIDがとれました。")
