@@ -126,8 +126,6 @@ if __name__ == "__main__":
         sys.exit()
     token = None
     user_list = []
-    aaa = youtube_video_live_stream_details(video_id)
-    aaa[0]['liveStreamingDetails'].get("actualEndTime")
 
     while youtube_video_live_stream_details(
             video_id)[0]['liveStreamingDetails'].get("actualEndTime") is None:
