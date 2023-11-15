@@ -75,7 +75,7 @@ def youtube_search(channel_id: str, max_results: int = 10) -> list:
     # Search: list で channel_id から検索する
     search_response = (youtube.search().list(channelId=channel_id,
                                              part="id",
-                                             order="date").execute())
+                                             order="date", eventType="upcoming", type="video").execute())
     return search_response.get("items", [])
 
 
