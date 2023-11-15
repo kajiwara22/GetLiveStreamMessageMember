@@ -93,7 +93,7 @@ if __name__ == "__main__":
         logger.exception("トークンの更新または取得に失敗しました。処理を中断します。")
         sys.exit(1)
     # youtube = youtube = build('youtube', 'v3', developerKey=API_KEY)
-    live_chat_details = None
+    live_chat_detail = None
     chat_id = None
     channel_id = config["SETTING"]["channel_id"]
     logger.info("配信対象日比較に用いる日付")
@@ -108,23 +108,23 @@ if __name__ == "__main__":
         if len(details) == 0:
             logger.error("まだLive配信は開始してない模様です。処理を終了します。")
             sys.exit()
-        else:
-            live_chat_details = details[0].get("liveStreamingDetails")
-            if (live_chat_details):
-                logger.info("配信情報はこちら")
-                logger.info(live_chat_details)
+        for detail in details:
+            live_chat_detail = detail.get("liveStreamingDetails")
+            if live_chat_detail:
+                logger.info(f"配信情報はこちら video_id: {video_id}")
+                logger.info(live_chat_detail)
                 # {'scheduledStartTime': '2023-10-20T12:30:46Z'
-                scheduledStartTime = datetime.strptime(live_chat_details["scheduledStartTime"], '%Y-%m-%dT%H:%M:%S%z')
+                scheduledStartTime = datetime.strptime(live_chat_detail["scheduledStartTime"], '%Y-%m-%dT%H:%M:%S%z')
                 logger.info("日付比較は以下のdayで実施")
                 logger.info(today_obj)
                 logger.info(scheduledStartTime)
-                if scheduledStartTime.day == today_obj.day and "actualEndTime" not in live_chat_details.keys():
+                if scheduledStartTime.day == today_obj.day and "actualEndTime" not in live_chat_detail.keys():
                     break
             else:
                 logger.warn("liveStreamingDetailsが見つかりませんでした")
-                logger.warn(details[0])
-    if "activeLiveChatId" in live_chat_details.keys():
-        chat_id = live_chat_details["activeLiveChatId"]
+                logger.warn(detail)
+    if "activeLiveChatId" in live_chat_detail.keys():
+        chat_id = live_chat_detail["activeLiveChatId"]
         logger.info("チャットIDがとれました。")
         logger.debug(chat_id)
     else:
