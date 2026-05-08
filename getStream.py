@@ -9,6 +9,7 @@ import time
 from logging import getLogger, FileHandler, DEBUG, Formatter, StreamHandler, INFO
 from datetime import datetime, timedelta, timezone
 import configparser
+from wankomeNotifier import notify_wankome
 
 logger = getLogger(__name__)
 log_file_path = f"log/{date.today().strftime('%Y-%m-%d')}.log"
@@ -146,9 +147,16 @@ if __name__ == "__main__":
         for message in response["items"]:
             logger.debug(message)
             if (message.get("authorDetails")):
-                usr = message["authorDetails"]["displayName"]
+                author = message["authorDetails"]
+                usr = author["displayName"]
                 if usr not in user_list:
                     user_list.append(usr)
+                # メンバーシップメンバーからのメッセージなら通知関数を呼び出す
+                if author.get("isChatSponsor"):
+                    try:
+                        notify_wankome()
+                    except Exception:
+                        logger.exception("メンバー通知関数の呼び出しに失敗しました。")
         current_len = len(user_list)
         token = response["nextPageToken"]
         if current_len > old_len:
