@@ -13,7 +13,9 @@ from wankomeNotifier import notify_wankome
 
 logger = getLogger(__name__)
 log_file_path = f"log/{date.today().strftime('%Y-%m-%d')}.log"
-file_handler = FileHandler(filename=log_file_path, encoding='utf-8')  # handler2はファイル出力
+file_handler = FileHandler(
+    filename=log_file_path, encoding="utf-8"
+)  # handler2はファイル出力
 logger.setLevel(DEBUG)
 file_handler.setLevel(DEBUG)  # handler2はLevel.WARN以上
 file_handler.setFormatter(Formatter("%(asctime)s %(levelname)8s %(message)s"))
@@ -37,10 +39,10 @@ API_VERSION = "v3"
 youtube = None
 slp_time = 10  # sec
 
-JST = timezone(timedelta(hours=+9), 'JST')
+JST = timezone(timedelta(hours=+9), "JST")
 
 
-def conv_jst(d:datetime):
+def conv_jst(d: datetime):
     if d.tzinfo is None or d.tzinfo.utcoffset is None:
         return (d.replace(tzinfo=timezone.utc)).astimezone(JST)
 
@@ -57,13 +59,18 @@ def get_authenticated_service():
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             old_expiry_time = creds.expiry
-            logger.debug(f"tokenのリフレッシュが必要です。 有効期限: {conv_jst(old_expiry_time)}")
+            logger.debug(
+                f"tokenのリフレッシュが必要です。 有効期限: {conv_jst(old_expiry_time)}"
+            )
             creds.refresh(Request())
             logger.debug("リフレッシュを実施しました。")
-            logger.debug(f"更新前 {conv_jst(old_expiry_time)} -> 更新後: {conv_jst(creds.expiry)}")
+            logger.debug(
+                f"更新前 {conv_jst(old_expiry_time)} -> 更新後: {conv_jst(creds.expiry)}"
+            )
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                CLIENT_SECRETS_FILE, SCOPES)
+                CLIENT_SECRETS_FILE, SCOPES
+            )
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open("token.pickle", "wb") as token:
@@ -74,16 +81,25 @@ def get_authenticated_service():
 
 def youtube_search(channel_id: str, max_results: int = 10) -> list:
     # Search: list で channel_id から検索する
-    search_response = (youtube.search().list(channelId=channel_id,
-                                             part="id",
-                                             order="date", eventType="upcoming", type="video").execute())
+    search_response = (
+        youtube.search()
+        .list(
+            channelId=channel_id,
+            part="id",
+            order="date",
+            eventType="upcoming",
+            type="video",
+        )
+        .execute()
+    )
     return search_response.get("items", [])
 
 
 def youtube_video_live_stream_details(video_id: str) -> list:
     # Videos: list で video_id から検索する
-    video_response = (youtube.videos().list(
-        id=video_id, part="liveStreamingDetails").execute())
+    video_response = (
+        youtube.videos().list(id=video_id, part="liveStreamingDetails").execute()
+    )
     return video_response.get("items", [])
 
 
@@ -98,8 +114,9 @@ if __name__ == "__main__":
     chat_id = None
     channel_id = config["SETTING"]["channel_id"]
     logger.info("配信対象日比較に用いる日付")
-    today_obj = datetime.today().astimezone(timezone.utc)   
+    today_obj = datetime.today().astimezone(timezone.utc)
     logger.info(today_obj)
+    find_target = False
     for item in youtube_search(channel_id):
         video_id = item["id"].get("videoId")
         if video_id is None:
@@ -115,56 +132,87 @@ if __name__ == "__main__":
                 logger.info(f"配信情報はこちら video_id: {video_id}")
                 logger.info(live_chat_detail)
                 # {'scheduledStartTime': '2023-10-20T12:30:46Z'
-                scheduledStartTime = datetime.strptime(live_chat_detail["scheduledStartTime"], '%Y-%m-%dT%H:%M:%S%z')
+                scheduledStartTime = datetime.strptime(
+                    live_chat_detail["scheduledStartTime"], "%Y-%m-%dT%H:%M:%S%z"
+                )
                 logger.info("日付比較は以下のdayで実施")
                 logger.info(today_obj)
                 logger.info(scheduledStartTime)
-                if scheduledStartTime.day == today_obj.day and "actualEndTime" not in live_chat_detail.keys():
+                logger.info(
+                    f"{today_obj.day} == {scheduledStartTime.day} : {today_obj.day == scheduledStartTime.day}"
+                )
+                logger.info(
+                    f'"actualEndTime" not in live_chat_detail.keys: {"actualEndTime" not in live_chat_detail.keys()}'
+                )
+                if (
+                    today_obj.day == scheduledStartTime.day
+                    and "actualEndTime" not in live_chat_detail.keys()
+                ):
+                    logger.info("取得対象を見つけました！")
+                    find_target = True
                     break
             else:
                 logger.warn("liveStreamingDetailsが見つかりませんでした")
                 logger.warn(detail)
-    if "activeLiveChatId" in live_chat_detail.keys():
+        if find_target:
+            break
+    if find_target and "activeLiveChatId" in live_chat_detail.keys():
         chat_id = live_chat_detail["activeLiveChatId"]
         logger.info("チャットIDがとれました。")
         logger.debug(chat_id)
     else:
-        logger.error("チャットIDが取れませんでした。まだLive配信は開始してない模様です。処理を終了します。")
+        logger.error(
+            "チャットIDが取れませんでした。まだLive配信は開始してない模様です。処理を終了します。"
+        )
+        logger.error(f"find_target: {find_target}")
         sys.exit()
     token = None
-    user_list = []
+    user_list = {}
 
-    while youtube_video_live_stream_details(
-            video_id)[0]['liveStreamingDetails'].get("actualEndTime") is None:
+    while (
+        youtube_video_live_stream_details(video_id)[0]["liveStreamingDetails"].get(
+            "actualEndTime"
+        )
+        is None
+    ):
         logger.debug("メッセージを取得します")
         logger.debug(f"token={token}")
-        request = youtube.liveChatMessages().list(liveChatId=chat_id,
-                                                  part="authorDetails",
-                                                  maxResults=2000,
-                                                  pageToken=token)
+        request = youtube.liveChatMessages().list(
+            liveChatId=chat_id,
+            part="snippet,authorDetails",
+            maxResults=2000,
+            pageToken=token,
+        )
         response = request.execute()
-        old_len = len(user_list)
+        old_len = len(user_list.keys())
         for message in response["items"]:
             logger.debug(message)
-            if (message.get("authorDetails")):
-                author = message["authorDetails"]
-                usr = author["displayName"]
-                if usr not in user_list:
-                    user_list.append(usr)
+            if message.get("authorDetails"):
+                author = message.get("authorDetails", {})
+                usr = author.get("displayName")
+                if usr:
+                    user_list[usr] = True
                 # メンバーシップメンバーからのメッセージなら通知関数を呼び出す
                 if author.get("isChatSponsor"):
                     try:
-                        notify_wankome()
+                        # snippetがない場合は空辞容{}を返すようにして、エラーを防ぎつつ深く潜る
+                        snippet = message.get("snippet", {})
+                        display_message = snippet.get("displayMessage", "")
+                        if "w" in display_message.lower():
+                            notify_wankome()
                     except Exception:
                         logger.exception("メンバー通知関数の呼び出しに失敗しました。")
-        current_len = len(user_list)
+        current_len = len(user_list.keys())
         token = response["nextPageToken"]
         if current_len > old_len:
             logger.debug(f"発言ユーザーが増えました。{old_len} > {current_len} ")
             logger.debug("発言ユーザーは下記の通り ")
-            logger.debug(f"{user_list}")
-            with open(f"result/{date.today().strftime('%Y-%m-%d')}.txt",
-                      mode="w", encoding="UTF-8") as f:
+            logger.debug(f"{user_list.keys()}")
+            with open(
+                f"result/{date.today().strftime('%Y-%m-%d')}.txt",
+                mode="w",
+                encoding="UTF-8",
+            ) as f:
                 for listener in user_list:
                     f.write(f"{listener}\n")
         time.sleep(slp_time)
