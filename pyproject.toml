@@ -1,0 +1,14 @@
+[project]
+name = "youtubestreammessageuser"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "google-api-python-client>=2.74.0",
+    "google-auth>=2.16.0",
+    "google-auth-oauthlib>=0.8.0",
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
+    "protobuf>=4.21.12",
+]
