@@ -189,3 +189,4 @@ result/*.txt
 log/*.log
 token.pickle
 client_secrets.json
+.claude-config
