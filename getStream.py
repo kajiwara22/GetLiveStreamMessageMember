@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "proto"))
 import stream_list_pb2  # noqa: E402
 import stream_list_pb2_grpc  # noqa: E402
 
-from wankomeNotifier import notify_wankome  # noqa: E402
+from wankomeNotifier import notify_wankome_for_message  # noqa: E402
 
 logger = getLogger(__name__)
 log_file_path = f"log/{date.today().strftime('%Y-%m-%d')}.log"
@@ -192,8 +192,7 @@ def process_message(message, user_list: dict) -> None:
     if author.HasField("is_chat_sponsor") and author.is_chat_sponsor:
         display_message = snippet.display_message if snippet.HasField("display_message") else ""
         try:
-            if "w" in display_message.lower():
-                notify_wankome()
+            notify_wankome_for_message(display_message)
         except Exception:
             logger.exception("メンバー通知関数の呼び出しに失敗しました。")
 
