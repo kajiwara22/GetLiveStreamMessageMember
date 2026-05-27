@@ -199,10 +199,15 @@ def process_message(message, user_list: dict) -> None:
     display_message = snippet.display_message if snippet.HasField("display_message") else ""
     logger.debug(display_message)
     if author.HasField("is_chat_sponsor") and author.is_chat_sponsor:
-        try:
-            notify_wankome_for_message(display_message)
-        except Exception:
-            logger.exception("メンバー通知関数の呼び出しに失敗しました。")
+        published_at = datetime.fromisoformat(snippet.published_at).astimezone(timezone.utc) if snippet.HasField("published_at") else None
+        now = datetime.now(tz=timezone.utc)
+        if published_at is not None and (now - published_at) >= timedelta(minutes=1):
+            logger.debug(f"古いメッセージのためわんこめ通知をスキップします。published_at={published_at.astimezone(JST)} now={now.astimezone(JST)}")
+        else:
+            try:
+                notify_wankome_for_message(display_message)
+            except Exception:
+                logger.exception("メンバー通知関数の呼び出しに失敗しました。")
 
     if len(user_list) > old_len:
         logger.debug(f"発言ユーザーが増えました。{old_len} > {len(user_list)} ")
