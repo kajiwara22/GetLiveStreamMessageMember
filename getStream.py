@@ -18,16 +18,22 @@ import stream_list_pb2_grpc  # noqa: E402
 
 from wankomeNotifier import notify_wankome_for_message  # noqa: E402
 
-logger = getLogger(__name__)
 log_file_path = f"log/{date.today().strftime('%Y-%m-%d')}.log"
 file_handler = FileHandler(filename=log_file_path, encoding="utf-8")
-logger.setLevel(DEBUG)
 file_handler.setLevel(DEBUG)
 file_handler.setFormatter(Formatter("%(asctime)s %(levelname)8s %(message)s"))
-logger.addHandler(file_handler)
 stream_handler = StreamHandler(sys.stdout)
 stream_handler.setLevel(INFO)
-logger.addHandler(stream_handler)
+
+def _setup_logger(name: str):
+    lg = getLogger(name)
+    lg.setLevel(DEBUG)
+    lg.addHandler(file_handler)
+    lg.addHandler(stream_handler)
+    return lg
+
+logger = _setup_logger(__name__)
+_setup_logger("wankomeNotifier")
 config = configparser.ConfigParser()
 config.read("youtubechannel.ini")
 
