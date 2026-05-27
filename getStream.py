@@ -188,9 +188,11 @@ def process_message(message, user_list: dict) -> None:
     if display_name:
         user_list[display_name] = True
 
+    # logger.debug(message)
     snippet = message.snippet
+    display_message = snippet.display_message if snippet.HasField("display_message") else ""
+    logger.debug(display_message)
     if author.HasField("is_chat_sponsor") and author.is_chat_sponsor:
-        display_message = snippet.display_message if snippet.HasField("display_message") else ""
         try:
             notify_wankome_for_message(display_message)
         except Exception:
@@ -224,9 +226,9 @@ def stream_live_chat(creds, chat_id: str, user_list: dict, page_token: str | Non
             live_chat_id=chat_id,
             page_token=last_token,
         )
-        logger.info(
-            f"streamList を開始します。page_token={'(あり)' if last_token else '(なし)'}"
-        )
+        #logger.info(
+        #    f"streamList を開始します。page_token={'(あり)' if last_token else '(なし)'}"
+        #)
         try:
             for response in stub.StreamList(request, metadata=metadata):
                 if response.HasField("next_page_token"):
@@ -324,8 +326,8 @@ def main() -> int:
             logger.info(
                 "配信終了の疑いがありましたが actualEndTime 未検出。再接続します。"
             )
-        else:
-            logger.info("ストリームが切断されたため再接続します。")
+        # else:
+            # logger.info("ストリームが切断されたため再接続します。")
         time.sleep(RECONNECT_BACKOFF_SEC)
 
     try:
