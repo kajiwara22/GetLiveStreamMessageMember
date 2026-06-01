@@ -104,21 +104,6 @@ def build_youtube_client(creds):
     return build(API_SERVICE_NAME, API_VERSION, credentials=creds)
 
 
-def youtube_search(youtube, channel_id: str) -> list:
-    search_response = (
-        youtube.search()
-        .list(
-            channelId=channel_id,
-            part="id",
-            order="date",
-            eventType="upcoming",
-            type="video",
-        )
-        .execute()
-    )
-    return search_response.get("items", [])
-
-
 def youtube_video_live_stream_details(youtube, video_id: str) -> list:
     video_response = (
         youtube.videos().list(id=video_id, part="liveStreamingDetails").execute()
@@ -138,40 +123,28 @@ def is_stream_ended(youtube, video_id: str) -> bool:
 
 
 def find_active_live_chat(youtube, channel_id: str):
-    """配信中の video_id と activeLiveChatId を取得する。見つからなければ (None, None)。"""
-    logger.info("配信対象日比較に用いる日付")
-    today_obj = datetime.today().astimezone(timezone.utc)
-    logger.info(today_obj)
+    """配信中の video_id と liveChatId を取得する。見つからなければ (None, None)。"""
+    response = (
+        youtube.liveBroadcasts()
+        .list(
+            part="id,snippet,status",
+            broadcastStatus="active",
+            broadcastType="all",
+        )
+        .execute()
+    )
+    items = response.get("items", [])
+    logger.info(f"liveBroadcasts.list(active) 取得件数: {len(items)}")
 
-    for item in youtube_search(youtube, channel_id):
-        video_id = item["id"].get("videoId")
-        if video_id is None:
-            continue
-        details = youtube_video_live_stream_details(youtube, video_id)
-        if len(details) == 0:
-            continue
-        for detail in details:
-            live_chat_detail = detail.get("liveStreamingDetails")
-            if not live_chat_detail:
-                logger.warn("liveStreamingDetailsが見つかりませんでした")
-                logger.warn(detail)
-                continue
-            logger.info(f"配信情報はこちら video_id: {video_id}")
-            logger.info(live_chat_detail)
-            scheduled_start_time = datetime.strptime(
-                live_chat_detail["scheduledStartTime"], "%Y-%m-%dT%H:%M:%S%z"
-            )
-            logger.info(
-                f"{today_obj.day} == {scheduled_start_time.day} : "
-                f"{today_obj.day == scheduled_start_time.day}"
-            )
-            if (
-                today_obj.day == scheduled_start_time.day
-                and "actualEndTime" not in live_chat_detail.keys()
-                and "activeLiveChatId" in live_chat_detail.keys()
-            ):
-                logger.info("取得対象を見つけました！")
-                return video_id, live_chat_detail["activeLiveChatId"]
+    for item in items:
+        video_id = item.get("id")
+        snippet = item.get("snippet", {})
+        live_chat_id = snippet.get("liveChatId")
+        logger.info(f"配信情報: video_id={video_id} liveChatId={live_chat_id}")
+        if video_id and live_chat_id:
+            logger.info("取得対象を見つけました！")
+            return video_id, live_chat_id
+
     return None, None
 
 
