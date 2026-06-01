@@ -128,22 +128,58 @@ def find_active_live_chat(youtube, channel_id: str):
         youtube.liveBroadcasts()
         .list(
             part="id,snippet,status",
-            broadcastStatus="active",
+            broadcastStatus="upcoming",
             broadcastType="all",
         )
         .execute()
     )
     items = response.get("items", [])
-    logger.info(f"liveBroadcasts.list(active) 取得件数: {len(items)}")
+    logger.info(f"liveBroadcasts.list(upcoming) 取得件数: {len(items)}")
+
+    today_jst = datetime.now(JST).date()
+    logger.info(f"配信対象日（JST）: {today_jst}")
+
+    for i, item in enumerate(items):
+        snippet = item.get("snippet", {})
+        sst = snippet.get("scheduledStartTime", "(なし)")
+        sst_jst = (
+            datetime.fromisoformat(sst.replace("Z", "+00:00")).astimezone(JST).strftime("%Y-%m-%d %H:%M JST")
+            if sst != "(なし)" else "(なし)"
+        )
+        logger.debug(
+            f"[{i}] video_id={item.get('id')} title={snippet.get('title')} "
+            f"scheduledStartTime={sst_jst} liveChatId={snippet.get('liveChatId')} "
+            f"lifeCycleStatus={item.get('status', {}).get('lifeCycleStatus')}"
+        )
 
     for item in items:
         video_id = item.get("id")
         snippet = item.get("snippet", {})
         live_chat_id = snippet.get("liveChatId")
-        logger.info(f"配信情報: video_id={video_id} liveChatId={live_chat_id}")
-        if video_id and live_chat_id:
-            logger.info("取得対象を見つけました！")
-            return video_id, live_chat_id
+        scheduled_start_time_str = snippet.get("scheduledStartTime")
+        if not scheduled_start_time_str:
+            logger.debug(f"scheduledStartTime なし。スキップ。video_id={video_id}")
+            continue
+
+        scheduled_start_time = datetime.fromisoformat(
+            scheduled_start_time_str.replace("Z", "+00:00")
+        ).astimezone(JST)
+        scheduled_date_jst = scheduled_start_time.date()
+
+        logger.info(
+            f"video_id={video_id} scheduledStartTime(JST)={scheduled_start_time} "
+            f"today={today_jst} 一致={scheduled_date_jst == today_jst}"
+        )
+
+        if scheduled_date_jst != today_jst:
+            continue
+
+        if not live_chat_id:
+            logger.warning(f"liveChatId なし。スキップ。video_id={video_id}")
+            continue
+
+        logger.info("取得対象を見つけました！")
+        return video_id, live_chat_id
 
     return None, None
 
