@@ -5,6 +5,7 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 _config = configparser.ConfigParser()
+_config.optionxform = str
 _config.read("youtubechannel.ini")
 
 _base_url = _config["WANKOME"]["base_url"]
