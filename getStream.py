@@ -35,6 +35,7 @@ def _setup_logger(name: str):
 logger = _setup_logger(__name__)
 _setup_logger("wankomeNotifier")
 config = configparser.ConfigParser()
+config.optionxform = str
 config.read("youtubechannel.ini")
 
 CLIENT_SECRETS_FILE = "client_secrets.json"
