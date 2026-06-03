@@ -1,3 +1,4 @@
+import argparse
 import pickle
 import os
 import sys
@@ -293,6 +294,14 @@ def stream_live_chat(creds, chat_id: str, user_list: dict, page_token: str | Non
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="YouTube Liveチャット監視スクリプト")
+    parser.add_argument(
+        "--chat-id",
+        metavar="LIVE_CHAT_ID",
+        help="監視対象のライブチャットID。指定した場合は配信検索をスキップして直接接続する。",
+    )
+    args = parser.parse_args()
+
     try:
         creds = load_or_refresh_credentials()
     except Exception:
@@ -300,14 +309,19 @@ def main() -> int:
         return 1
 
     youtube = build_youtube_client(creds)
-    channel_id = config["SETTING"]["channel_id"]
 
-    video_id, chat_id = find_active_live_chat(youtube, channel_id)
-    if not chat_id:
-        logger.error(
-            "チャットIDが取れませんでした。まだLive配信は開始してない模様です。処理を終了します。"
-        )
-        return 0
+    if args.chat_id:
+        logger.info(f"チャットIDが引数で指定されました。配信検索をスキップします。chat_id={args.chat_id}")
+        video_id = None
+        chat_id = args.chat_id
+    else:
+        channel_id = config["SETTING"]["channel_id"]
+        video_id, chat_id = find_active_live_chat(youtube, channel_id)
+        if not chat_id:
+            logger.error(
+                "チャットIDが取れませんでした。まだLive配信は開始してない模様です。処理を終了します。"
+            )
+            return 0
 
     logger.info("チャットIDがとれました。")
     logger.debug(chat_id)
@@ -333,11 +347,15 @@ def main() -> int:
             break
 
         # ストリームが切れたので videos.list で actualEndTime を確認
-        try:
-            ended = is_stream_ended(youtube, video_id)
-        except Exception:
-            logger.exception("videos.list での終了確認に失敗しました。再接続します。")
+        # video_id が不明（--chat-id 直指定）の場合はスキップして再接続
+        if video_id is None:
             ended = False
+        else:
+            try:
+                ended = is_stream_ended(youtube, video_id)
+            except Exception:
+                logger.exception("videos.list での終了確認に失敗しました。再接続します。")
+                ended = False
 
         if ended:
             logger.info("actualEndTime を検出したためループを抜けます。")
