@@ -196,6 +196,19 @@ def save_user_list(user_list: dict) -> None:
             f.write(f"{listener}\n")
 
 
+def maybe_notify_wankome(role: str, snippet, display_message: str) -> None:
+    """指定ロールの発言について、古すぎなければわんこめ通知を行う。"""
+    published_at = datetime.fromisoformat(snippet.published_at).astimezone(timezone.utc) if snippet.HasField("published_at") else None
+    now = datetime.now(tz=timezone.utc)
+    if published_at is not None and (now - published_at) >= timedelta(minutes=1):
+        logger.debug(f"古いメッセージのためわんこめ通知をスキップします。role={role} published_at={published_at.astimezone(JST)} now={now.astimezone(JST)}")
+        return
+    try:
+        notify_wankome_for_message(display_message, role)
+    except Exception:
+        logger.exception(f"メンバー通知関数の呼び出しに失敗しました。role={role}")
+
+
 def process_message(message, user_list: dict) -> None:
     """1 件のメッセージを処理し、ユーザーリスト更新・わんこめ通知を行う。"""
     author = message.author_details
@@ -209,16 +222,11 @@ def process_message(message, user_list: dict) -> None:
     snippet = message.snippet
     display_message = snippet.display_message if snippet.HasField("display_message") else ""
     logger.debug(display_message)
+
     if author.HasField("is_chat_sponsor") and author.is_chat_sponsor:
-        published_at = datetime.fromisoformat(snippet.published_at).astimezone(timezone.utc) if snippet.HasField("published_at") else None
-        now = datetime.now(tz=timezone.utc)
-        if published_at is not None and (now - published_at) >= timedelta(minutes=1):
-            logger.debug(f"古いメッセージのためわんこめ通知をスキップします。published_at={published_at.astimezone(JST)} now={now.astimezone(JST)}")
-        else:
-            try:
-                notify_wankome_for_message(display_message)
-            except Exception:
-                logger.exception("メンバー通知関数の呼び出しに失敗しました。")
+        maybe_notify_wankome("sponsor", snippet, display_message)
+    if author.HasField("is_chat_moderator") and author.is_chat_moderator:
+        maybe_notify_wankome("moderator", snippet, display_message)
 
     if len(user_list) > old_len:
         logger.debug(f"発言ユーザーが増えました。{old_len} > {len(user_list)} ")

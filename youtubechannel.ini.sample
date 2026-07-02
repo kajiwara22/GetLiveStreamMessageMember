@@ -1,2 +1,14 @@
 [SETTING]
 channel_id = {this is channel id}
+
+[WANKOME]
+base_url = http://localhost:11180/api/wordparty
+
+; 書式: <wordparty_id> = キーワード1, キーワード2, ...
+; is_chat_sponsor（メンバーシップ加入者）の発言に反応するキーワード
+[WANKOME_KEYWORDS_SPONSOR]
+rRobQ6fI = w, W
+
+; is_chat_moderator（モデレーター）の発言に反応するキーワード
+[WANKOME_KEYWORDS_MODERATOR]
+rRobQ6fI = w, W
